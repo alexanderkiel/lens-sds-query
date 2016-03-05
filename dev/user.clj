@@ -72,20 +72,15 @@
   (reset)
 
   (-> (send-query
-        #_"http://localhost:5007/query"
-        "http://192.168.99.100/query"
-        [(list :query {:study-oid "S001"
-                       :query {:qualifier
-                               [:and
-                                [:form "T00001"] [:form "D00074"]
-                                [:study-event "A1_HAUPT01"]
-                                ["Hochschulabschluss" :or
-                                 [:item "T00001_F0050" [:= 1]] [:item "T00001_F0051" [:= 1]]]
-                                [:item "D00074_F0004" [:> 25]]]}})])
+        "http://localhost:5007/query"
+        ;"http://192.168.99.100/query"
+        '[(:query {:study-oid "S001" :query {:qualifier [:and [:form "T00001"] [:study-event "A1_HAUPT01"]]}})])
       (deref)
       (update :body #(u/read-transit % :json))
       (select-keys [:status :body])
       (time))
+
+  (println (slurp (write-transit '[(:query {:qualifier [:and [:form "T00001"] [:study-event "A1_HAUPT01"]]})])))
 
   )
 

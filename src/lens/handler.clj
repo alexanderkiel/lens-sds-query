@@ -40,8 +40,12 @@
   (wrap-transit
     (fnk [body]
       (let [parser (om/parser {:read read})]
-        {:status 200
-         :body (parser opts body)}))))
+        (try
+          {:status 200
+           :body (parser opts body)}
+          (catch Exception e
+            {:status (get (ex-data e) :status 500)
+             :body {:error (.getMessage e)}}))))))
 
 ;; ---- Form Subject Counts ---------------------------------------------------
 
@@ -50,10 +54,18 @@
   (when-let [counts (get (stats/form-subject-counts form-subject-count-cache) study-oid)]
     {:value counts}))
 
+(defn- check-study-oid [study-oid]
+  (when (s/check Str study-oid)
+    (throw (ex-info "Invalid or missing Study OID." {:status 400}))))
+
+(defn- check-query [query]
+  (when-let [e (s/check Query query)]
+    (throw (ex-info (str "Invalid or missing Query: " e) {:status 400}))))
+
 (defmethod read :query
   [{:keys [conn]} _ {:keys [t study-oid query]}]
   (s/validate (s/maybe NonNegInt) t)
-  (s/validate Str study-oid)
-  (s/validate Query query)
+  (check-study-oid study-oid)
+  (check-query query)
   (let [db (if t @(d/sync conn t) (d/db conn))]
     {:value (q/query db study-oid query)}))
