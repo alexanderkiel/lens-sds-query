@@ -114,7 +114,7 @@
          [:study-event "A1_HAUPT01"]
          ["Hochschulabschluss" :or
           [:item "T00001_F0050" [:= 1]] [:item "T00001_F0051" [:= 1]]]
-         [:item "age" [:> 60]]]}
+         [:item "D00153_AGE" [:> 60]]]}
        (query/query db "S001")
        (time))
 
