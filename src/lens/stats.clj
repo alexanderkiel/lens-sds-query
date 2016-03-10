@@ -7,7 +7,8 @@
             [lens.logging :as log :refer [trace debug warn]]
             [lens.util :as u :refer [NonBlankStr NonNegInt PosInt]]
             [schema.core :as s]
-            [clojure.java.io :as io]))
+            [clojure.java.io :as io]
+            [shortid.core :as shortid]))
 
 (def FormCounts
   {(s/named NonBlankStr "study-oid")
@@ -107,7 +108,9 @@
   Lifecycle
   (start [this]
     (let [cache (atom {})
-          form-created-ch (aa/chan (:conn broker) 64 (map read-transit))]
+          form-created-ch (aa/chan (:conn broker) 64 (map read-transit)
+                                   {:queue-name (str "lens-sds-query.events.form.created-" (shortid/generate 5))
+                                    :consumer-tag "lens-sds-query"})]
       (initial-load cache (d/db (:conn db-creator)))
       (update-loop (:conn db-creator) cache form-created-ch)
       (aa/sub (:exchange broker) "form.created" form-created-ch)
