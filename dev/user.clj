@@ -183,3 +183,18 @@
   (pprint (take 2 (clojure.data/diff data-2 data-3)))
 
   )
+
+(defn count-datoms [coll]
+  (reduce + (eduction (map (constantly 1)) coll)))
+
+(comment
+
+  (d/q '[:find (count ?sub) . :where [?sub :subject/id]] db)
+  (d/q '[:find (count ?se) . :where [?se :study-event/id]] db)
+  (d/q '[:find (count ?f) . :where [?f :form/id]] db)
+  (d/q '[:find (count ?ig) . :where [?ig :item-group/id]] db)
+  (count-datoms (d/datoms db :aevt :subject/id))
+  (count-datoms (d/datoms db :aevt :item/id))
+  (count-datoms (d/datoms db :eavt))
+
+  )
