@@ -158,3 +158,28 @@
        (time))
 
   )
+
+(comment
+  (startup)
+  (pst)
+  (def db (d/db (connect)))
+  (def data-1
+    (d/q '[:find ?s-oid ?f-oid (count ?f)
+           :where
+           [?s :study/oid "T00449"]
+           [?s :study/subjects ?sub]
+           [?sub :subject/study-events ?se]
+           [?se :study-event/forms ?f]
+           [?f :form/oid ?f-oid]] db))
+
+  (def data-2
+    (reduce (fn [r [study-oid form-oid count]]
+              (if form-oid
+                (assoc-in r [study-oid form-oid] count)
+                r)) {} data-1))
+
+  (def data-3 (read-string (slurp "form-stat-data1.edn")))
+
+  (pprint (take 2 (clojure.data/diff data-2 data-3)))
+
+  )
