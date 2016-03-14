@@ -113,21 +113,21 @@
 
     :else Atom))
 
-; Qualifier := '(' ':and' Expression+ ')'
-(def Qualifier
+; Qualifiers := '(' ':and' Expression+ ')'
+(def Qualifiers
   [(s/one (s/eq :and) "conj")
    (s/one Expression "first")
    Expression])
 
-; Disqualifier := '(' ':not' '(' ':or' Expression+ ')' ')'
-(def Disqualifier
+; Disqualifiers := '(' ':not' '(' ':or' Expression+ ')' ')'
+(def Disqualifiers
   [(s/one (s/eq :not) "negation")
    (s/one [(s/one (s/eq :or) "disj") (s/one Expression "first") Expression]
           "disqualifier")])
 
 (def Query
-  {:qualifier Qualifier
-   (s/optional-key :disqualifier) Disqualifier})
+  {:qualifier Qualifiers
+   (s/optional-key :disqualifier) Disqualifiers})
 
 ;; ---- Private ---------------------------------------------------------------
 
