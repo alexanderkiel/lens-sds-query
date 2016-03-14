@@ -2,12 +2,14 @@
   (:use plumbing.core)
   (:require [bidi.ring :as bidi-ring]
             [lens.handler :as h]
+            [lens.middleware.auth :refer [wrap-auth]]
             [lens.middleware.cors :refer [wrap-cors]]
             [lens.middleware.log :refer [wrap-log-errors]]))
 
-(defn- route [opts]
-  ["/" {"health" (h/health-handler opts)
-        "query" {:post (h/query-handler opts)}}])
+(defnk route [token-introspection-uri :as opts]
+  ["/"
+   {"health" (h/health-handler opts)
+    "query" {:post (wrap-auth (h/query-handler opts) token-introspection-uri)}}])
 
 (defn wrap-not-found [handler]
   (fn [req]

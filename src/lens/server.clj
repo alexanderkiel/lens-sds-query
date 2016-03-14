@@ -13,5 +13,5 @@
     (stop-fn)
     (assoc server :stop-fn nil)))
 
-(defn new-server []
-  (map->Server {}))
+(defn new-server [token-introspection-uri]
+  (map->Server {:token-introspection-uri token-introspection-uri}))

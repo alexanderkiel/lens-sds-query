@@ -2,7 +2,7 @@
   (:require [clojure.set :as set]
             [datomic.api :as d]
             [lens.util :refer [NonNegInt]]
-            [schema.core :as s :refer [Str Keyword Symbol Num Int]]
+            [schema.core :as s :refer [Str Keyword Symbol Num Int Any]]
             [clojure.core.cache :as cache]))
 
 ;; ---- Schemas ---------------------------------------------------------------
@@ -159,8 +159,7 @@
       (s/one Keyword "attr")
       (s/one (s/eq '?v) "?v")]
      "attr-clause")
-   [[(s/one (s/cond-pre Symbol (s/pred set?)) "op")
-     (s/cond-pre Symbol Str Num)]]])
+   [Any]])
 
 (defmulti predicate-rules
   "Takes a predicate like [:= 10] and returns an (item-value ?i) rule."

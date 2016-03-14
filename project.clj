@@ -6,6 +6,7 @@
 
   :dependencies [[org.clojure/clojure "1.8.0"]
                  [org.clojure/core.async "0.2.371"]
+                 [org.clojure/data.json "0.2.6"]
                  [org.clojure/tools.logging "0.3.1"]
                  [org.clojure/core.cache "0.6.4"]
                  [prismatic/plumbing "0.5.2"]

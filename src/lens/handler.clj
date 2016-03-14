@@ -33,19 +33,23 @@
             (update :body write-transit))))))
 
 (defmulti read
-  "Like om read."
+  "Like om read. The env contains :user-info."
   (fn [_ k _] k))
 
 (defn query-handler [opts]
   (wrap-transit
-    (fnk [body]
-      (let [parser (om/parser {:read read})]
-        (try
-          {:status 200
-           :body (parser opts body)}
-          (catch Exception e
-            {:status (get (ex-data e) :status 500)
-             :body {:error (.getMessage e)}}))))))
+    (fnk [{user-info nil} body]
+      (if user-info
+        (let [parser (om/parser {:read read})
+              env (assoc opts :user-info user-info)]
+          (try
+            {:status 200
+             :body (parser env body)}
+            (catch Exception e
+              {:status (get (ex-data e) :status 500)
+               :body {:error (.getMessage e)}})))
+        {:status 401
+         :body "Unauthorized"}))))
 
 ;; ---- Form Subject Counts ---------------------------------------------------
 
