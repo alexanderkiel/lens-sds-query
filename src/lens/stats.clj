@@ -112,7 +112,7 @@
                                    {:queue-name (str "lens-sds-query.events.form.created-" (shortid/generate 5))
                                     :consumer-tag "lens-sds-query"})]
       (initial-load cache (d/db (:conn db-creator)))
-      (update-loop (:conn db-creator) cache form-created-ch)
+      ;(update-loop (:conn db-creator) cache form-created-ch)
       (aa/sub (:exchange broker) "form.created" form-created-ch)
       (assoc this :cache cache :form-created-ch form-created-ch)))
   (stop [this]
