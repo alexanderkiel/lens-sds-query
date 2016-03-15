@@ -5,7 +5,7 @@
             [lens.logging :refer [info]]
             [lens.query :as q :refer [Query]]
             [lens.stats :as stats]
-            [lens.util :as u :refer [NonNegInt]]
+            [lens.util :as u :refer [NonNegInt NonBlankStr]]
             [schema.core :as s :refer [Str]])
   (:refer-clojure :exclude [read]))
 
@@ -58,18 +58,26 @@
   (when-let [counts (get (stats/form-subject-counts form-subject-count-cache) study-oid)]
     {:value counts}))
 
+(defn- check-t [t]
+  (when (s/check (s/maybe NonNegInt) t)
+    (throw (ex-info "Invalid T." {:status 400}))))
+
 (defn- check-study-oid [study-oid]
-  (when (s/check Str study-oid)
+  (when (s/check NonBlankStr study-oid)
     (throw (ex-info "Invalid or missing Study OID." {:status 400}))))
 
 (defn- check-query [query]
   (when-let [e (s/check Query query)]
-    (throw (ex-info (str "Invalid or missing Query: " e) {:status 400}))))
+    (throw (ex-info (str "Invalid or missing Query: " (pr-str e))
+                    {:status 400}))))
 
 (defmethod read :query
   [{:keys [conn]} _ {:keys [t study-oid query]}]
-  (s/validate (s/maybe NonNegInt) t)
+  (check-t t)
   (check-study-oid study-oid)
   (check-query query)
-  (let [db (if t @(d/sync conn t) (d/db conn))]
-    {:value (q/query db study-oid query)}))
+  (if t
+    (if-let [db (deref (d/sync conn t) 100 nil)]
+      {:value (q/query db study-oid query)}
+      (throw (ex-info (str "Unable to sync on t: " t) {:status 422})))
+    {:value (q/query (d/db conn) study-oid query)}))
