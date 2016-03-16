@@ -58,7 +58,7 @@
 ;; Init Remote Console
 (comment
   (in-ns 'user)
-  (init)
+  (startup)
   )
 
 (defn- write-transit [o]
@@ -197,4 +197,16 @@
   (count-datoms (d/datoms db :aevt :item/id))
   (count-datoms (d/datoms db :eavt))
 
+  )
+
+(comment
+  (d/basis-t db)
+  (d/pull db '[*] (d/t->tx (d/basis-t db)))
+  (->> (d/tx-range (d/log (connect)) 87811987 nil)
+       (drop 1)
+       (map :t)
+       (map d/t->tx)
+       (map #(d/pull db '[* {:event/_tx [:event/name]}] %))
+       (filter #(#{:form/created} (-> % :event/_tx first :event/name)))
+       (count))
   )
