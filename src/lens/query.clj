@@ -291,7 +291,7 @@
 (def cache (atom (new-cache 512)))
 
 (s/defn query-atom [db atom :- Atom]
-  (let [key [(d/basis-t db) atom]
+  (let [key [(or (d/as-of-t db) (d/basis-t db)) atom]
         wrapper-fn #(%1 (second %2))
         value-fn #(query-atom* db %)]
     (get (swap! cache #(cache/through wrapper-fn value-fn % key)) key)))

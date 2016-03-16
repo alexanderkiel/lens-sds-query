@@ -78,6 +78,6 @@
   (check-query query)
   (if t
     (if-let [db (deref (d/sync conn t) 100 nil)]
-      {:value (q/query db study-oid query)}
+      {:value (q/query (d/as-of db t) study-oid query)}
       (throw (ex-info (str "Unable to sync on t: " t) {:status 422})))
     {:value (q/query (d/db conn) study-oid query)}))
