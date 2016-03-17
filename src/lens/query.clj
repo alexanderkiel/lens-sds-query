@@ -1,9 +1,12 @@
 (ns lens.query
-  (:require [clojure.set :as set]
+  (:require [clojure.tools.logging :as log]
+            [clojure.set :as set]
             [datomic.api :as d]
+            [lens.logging :refer [debug trace]]
             [lens.util :refer [NonNegInt]]
             [schema.core :as s :refer [Str Keyword Symbol Num Int Any]]
-            [clojure.core.cache :as cache]))
+            [clojure.core.cache :as cache]
+            [lens.util :as util]))
 
 ;; ---- Schemas ---------------------------------------------------------------
 
@@ -290,8 +293,11 @@
 
 (def cache (atom (new-cache 512)))
 
+(defn- t [db]
+  (or (d/as-of-t db) (d/basis-t db)))
+
 (s/defn query-atom [db atom :- Atom]
-  (let [key [(or (d/as-of-t db) (d/basis-t db)) atom]
+  (let [key [(t db) atom]
         wrapper-fn #(%1 (second %2))
         value-fn #(query-atom* db %)]
     (get (swap! cache #(cache/through wrapper-fn value-fn % key)) key)))
@@ -339,7 +345,13 @@
      :subject-count (or subject-count 0)}))
 
 (s/defn query [db study-oid :- Str query :- Query]
-  (let [qualifier (combine db :and (rest (:qualifier query)))
-        disqualifier (combine db :or (rest (rest (:disqualifier query))))]
-    (->> (set/difference qualifier disqualifier)
-         (counts db study-oid))))
+  (when-not (log/enabled? :trace)
+    (debug {:t (t db) :study-oid study-oid :query query}))
+  (let [start (System/nanoTime)
+        qualifier (combine db :and (rest (:qualifier query)))
+        disqualifier (combine db :or (rest (rest (:disqualifier query))))
+        res (->> (set/difference qualifier disqualifier)
+                 (counts db study-oid))]
+    (trace {:t (t db) :study-oid study-oid :query query
+            :duration (util/duration start)})
+    res))

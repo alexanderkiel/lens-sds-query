@@ -1,8 +1,9 @@
 (ns lens.handler
   (:use plumbing.core)
-  (:require [datomic.api :as d]
+  (:require [clojure.tools.logging :as log]
+            [datomic.api :as d]
             [om.next.server :as om]
-            [lens.logging :refer [info]]
+            [lens.logging :refer [info debug trace]]
             [lens.query :as q :refer [Query]]
             [lens.stats :as stats]
             [lens.util :as u :refer [NonNegInt NonBlankStr]]
@@ -72,12 +73,19 @@
                     {:status 400}))))
 
 (defmethod read :query
-  [{:keys [conn]} _ {:keys [t study-oid query]}]
+  [{:keys [conn user-info]} _ {:keys [t study-oid query]}]
   (check-t t)
   (check-study-oid study-oid)
   (check-query query)
-  (if t
-    (if-let [db (deref (d/sync conn t) 100 nil)]
-      {:value (q/query (d/as-of db t) study-oid query)}
-      (throw (ex-info (str "Unable to sync on t: " t) {:status 422})))
-    {:value (q/query (d/db conn) study-oid query)}))
+  (when-not (log/enabled? :trace)
+    (debug {:username (:username user-info) :t t :study-oid study-oid
+            :query query}))
+  (let [start (System/nanoTime)
+        res (if t
+              (if-let [db (deref (d/sync conn t) 100 nil)]
+                {:value (q/query (d/as-of db t) study-oid query)}
+                (throw (ex-info (str "Unable to sync on t: " t) {:status 422})))
+              {:value (q/query (d/db conn) study-oid query)})]
+    (trace {:username (:username user-info) :t t :study-oid study-oid
+            :query query :duration (u/duration start)})
+    res))
