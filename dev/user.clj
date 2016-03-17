@@ -212,6 +212,7 @@
   )
 
 (comment
-  (System/getProperty "datomic.ObjectCacheMax")
   (startup)
+  (def db (d/db (connect)))
+  (dotimes [_ 100] (lens.query/query db "S001" {:qualifier [:and [:form "T00001"]]}))
   )

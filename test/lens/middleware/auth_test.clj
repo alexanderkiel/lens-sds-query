@@ -11,4 +11,4 @@
   (is (= "a" (get-token {:headers {"authorization" "Bearer a"}}))))
 
 (deftest warp-auth-test
-  (is (= 401 (:status ((wrap-auth identity "uri") {:headers {}})))))
+  (is (= 401 (:status ((wrap-auth identity nil "uri") {:headers {}})))))

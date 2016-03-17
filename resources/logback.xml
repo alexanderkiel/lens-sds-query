@@ -52,6 +52,8 @@
     <logger name="org.hornetq.core.client.impl" level="INFO"/>
     <logger name="org.apache.tomcat.jdbc.pool" level="INFO"/>
 
+    <logger name="lens.handler" level="TRACE"/>
+    <logger name="lens.oauth2" level="DEBUG"/>
 
     <root level="INFO">
         <appender-ref ref="STDOUT"/>

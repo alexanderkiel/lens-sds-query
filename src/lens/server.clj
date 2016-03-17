@@ -1,12 +1,17 @@
 (ns lens.server
-  (:require [com.stuartsierra.component :refer [Lifecycle]]
-            [org.httpkit.server :refer [run-server]]
-            [lens.app :refer [app]]))
+  (:require [clojure.core.cache :as cache]
+            [com.stuartsierra.component :refer [Lifecycle]]
+            [lens.app :refer [app]]
+            [org.httpkit.server :refer [run-server]]))
+
+(defn ttl-cache [ttl]
+  (cache/ttl-cache-factory {} :ttl ttl))
 
 (defrecord Server [port thread db-creator stop-fn]
   Lifecycle
   (start [server]
-    (let [opts (assoc server :conn (:conn db-creator))
+    (let [auth-cache (atom (ttl-cache 60000))
+          opts (assoc server :conn (:conn db-creator) :auth-cache auth-cache)
           handler (app opts)]
       (assoc server :stop-fn (run-server handler opts))))
   (stop [server]

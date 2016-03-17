@@ -6,10 +6,10 @@
             [lens.middleware.cors :refer [wrap-cors]]
             [lens.middleware.log :refer [wrap-log-errors]]))
 
-(defnk route [token-introspection-uri :as opts]
+(defnk route [auth-cache token-introspection-uri :as opts]
   ["/"
    {"health" (h/health-handler opts)
-    "query" {:post (wrap-auth (h/query-handler opts) token-introspection-uri)}}])
+    "query" {:post (wrap-auth (h/query-handler opts) auth-cache token-introspection-uri)}}])
 
 (defn wrap-not-found [handler]
   (fn [req]

@@ -1,6 +1,7 @@
 (ns lens.middleware.auth
   (:use plumbing.core)
-  (:require [clojure.core.async :refer [<!!]]
+  (:require [clojure.core.cache :as cache]
+            [clojure.core.async :refer [<!!]]
             [clojure.string :as str]
             [lens.oauth2 :as oauth2]))
 
@@ -10,10 +11,16 @@
       (when (= "bearer" (.toLowerCase scheme))
         token))))
 
-(defn wrap-auth [handler token-introspection-uri]
-  (let [oauth2-introspect (partial oauth2/introspect token-introspection-uri)]
+(def unauthorized
+  {:status 401
+   :body "Unauthorized"})
+
+(defn wrap-auth [handler cache token-introspection-uri]
+  (let [introspect #(<!! (oauth2/introspect token-introspection-uri %))]
     (fn [req]
-      (if-letk [[user-info] (some-> (get-token req) oauth2-introspect <!!)]
-        (handler (assoc req :user-info user-info))
-        {:status 401
-         :body "Unauthorized"}))))
+      (if-let [token (get-token req)]
+        (let [cache (swap! cache #(cache/through introspect % token))]
+          (if-letk [[user-info] (get cache token)]
+            (handler (assoc req :user-info user-info))
+            unauthorized))
+        unauthorized))))
