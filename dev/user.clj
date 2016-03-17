@@ -210,3 +210,8 @@
        (filter #(#{:form/created} (-> % :event/_tx first :event/name)))
        (count))
   )
+
+(comment
+  (System/getProperty "datomic.ObjectCacheMax")
+  (startup)
+  )
