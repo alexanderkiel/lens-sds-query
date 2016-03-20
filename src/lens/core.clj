@@ -9,9 +9,6 @@
 (defn- max-memory []
   (quot (.maxMemory (Runtime/getRuntime)) (* 1024 1024)))
 
-(defn- available-processors []
-  (.availableProcessors (Runtime/getRuntime)))
-
 (defn- used-memory []
   (let [runtime (Runtime/getRuntime)]
     (quot (- (.totalMemory runtime) (.freeMemory runtime)) (* 1024 1024))))
@@ -28,13 +25,14 @@
 
 (defn -main [& _]
   (schedule-memory-logging 1 TimeUnit/MINUTES)
-  (letk [[port thread version db-creator server :as system]
+  (letk [[port thread version db-creator broker server :as system]
          (new-system env)]
     (comp/start system)
     (info {:version version})
     (info {:max-memory (max-memory)})
     (info {:num-cpus (available-processors)})
     (info {:datomic (:db-uri db-creator)})
+    (info {:broker (select-keys broker [:host :port :username])})
     (info {:token-introspection-uri (:token-introspection-uri server)})
     (info {:listen (str "0.0.0.0:" port)})
     (info {:num-worker-threads thread})))

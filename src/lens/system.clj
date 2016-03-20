@@ -8,6 +8,7 @@
             [lens.util :as util]))
 
 (defnk new-system [lens-sds-query-version db-uri port broker-host
+                   {broker-username "guest"} {broker-password "guest"}
                    token-introspection-uri]
   (comp/system-map
     :version lens-sds-query-version
@@ -18,7 +19,8 @@
     (new-database-creator db-uri)
 
     :broker
-    (new-broker {:host broker-host})
+    (new-broker {:host broker-host :username broker-username
+                 :password broker-password})
 
     :form-subject-count-cache
     (comp/using (new-form-subject-count-cache) [:db-creator :broker])
