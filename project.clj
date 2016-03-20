@@ -1,4 +1,4 @@
-(defproject lens-sds-query "0.3"
+(defproject lens-sds-query "0.4"
   :description "Lens Study Data Store Query Service"
   :url "https://github.com/alexanderkiel/lens-sds-query"
   :license {:name "Eclipse Public License"
