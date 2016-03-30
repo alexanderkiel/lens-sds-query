@@ -9,6 +9,7 @@
 (defnk route [auth-cache token-introspection-uri :as opts]
   ["/"
    {"health" (h/health-handler opts)
+    "current-t" (h/current-t-handler opts)
     "query" {:post (wrap-auth (h/query-handler opts) auth-cache token-introspection-uri)}}])
 
 (defn wrap-not-found [handler]

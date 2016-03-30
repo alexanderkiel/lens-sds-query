@@ -17,7 +17,15 @@
     {:status 200
      :body "OK"}))
 
-;; ---- Query ---------------------------------------------------------------
+;; ---- Current T -------------------------------------------------------------
+
+(defnk current-t-handler [conn]
+  (fn [_]
+    {:status 200
+     :headers {"Content-Type" "text/plain"}
+     :body (str (d/basis-t (d/db conn)))}))
+
+;; ---- Query -----------------------------------------------------------------
 
 (defn- write-transit [o]
   (u/write-transit :json {} o))
