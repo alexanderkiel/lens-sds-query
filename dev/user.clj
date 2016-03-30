@@ -2,6 +2,7 @@
   (:use plumbing.core)
   (:use criterium.core)
   (:require [clojure.core.async :refer [thread]]
+            [clojure.core.reducers :as r]
             [clojure.pprint :refer [pprint pp]]
             [clojure.repl :refer :all]
             [clojure.tools.namespace.repl :refer [refresh]]
@@ -185,17 +186,20 @@
   )
 
 (defn count-datoms [coll]
-  (reduce + (eduction (map (constantly 1)) coll)))
+  (reduce + (r/map (constantly 1) coll)))
 
+;; Counts
 (comment
-
-  (d/q '[:find (count ?sub) . :where [?sub :subject/id]] db)
-  (d/q '[:find (count ?se) . :where [?se :study-event/id]] db)
-  (d/q '[:find (count ?f) . :where [?f :form/id]] db)
-  (d/q '[:find (count ?ig) . :where [?ig :item-group/id]] db)
+  (startup)
+  (def db (d/db (connect)))
+  (d/basis-t db)
   (count-datoms (d/datoms db :aevt :subject/id))
+  (count-datoms (d/datoms db :aevt :study-event/id))
+  (count-datoms (d/datoms db :aevt :form/id))
+  (count-datoms (d/datoms db :aevt :item-group/id))
   (count-datoms (d/datoms db :aevt :item/id))
-  (count-datoms (d/datoms db :eavt))
+
+  (count-datoms (d/datoms db :avet :event/name :form/removed))
 
   )
 
@@ -211,8 +215,3 @@
        (count))
   )
 
-(comment
-  (startup)
-  (def db (d/db (connect)))
-  (dotimes [_ 100] (lens.query/query db "S001" {:qualifier [:and [:form "T00001"]]}))
-  )
