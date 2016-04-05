@@ -66,25 +66,26 @@
 
 ;; ---- Form Subject Counts ---------------------------------------------------
 
+(defn- check-study-oid [study-oid]
+  (when (s/check NonBlankStr study-oid)
+    (throw (ex-info "Invalid or missing Study OID." {:status 400}))))
+
 (defmethod read :form-subject-counts
   [{:keys [form-subject-count-cache]} _ {:keys [study-oid]}]
+  (check-study-oid study-oid)
   (when-let [counts (get (stats/form-subject-counts form-subject-count-cache) study-oid)]
     {:value counts}))
+
+;; ---- Query -----------------------------------------------------------------
 
 (defn- check-t [t]
   (when (s/check (s/maybe NonNegInt) t)
     (throw (ex-info "Invalid T." {:status 400}))))
 
-(defn- check-study-oid [study-oid]
-  (when (s/check NonBlankStr study-oid)
-    (throw (ex-info "Invalid or missing Study OID." {:status 400}))))
-
 (defn- check-query [query]
   (when-let [e (s/check Query query)]
     (throw (ex-info (str "Invalid or missing Query: " (pr-str e))
                     {:status 400}))))
-
-;; ---- Query -----------------------------------------------------------------
 
 (defmethod read :query
   [{:keys [conn user-info]} _ {:keys [t study-oid query]}]
