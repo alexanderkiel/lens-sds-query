@@ -7,11 +7,11 @@
 (defn ttl-cache [ttl]
   (cache/ttl-cache-factory {} :ttl ttl))
 
-(defrecord Server [port thread db-creator stop-fn]
+(defrecord Server [port thread database stop-fn]
   Lifecycle
   (start [server]
     (let [auth-cache (atom (ttl-cache 60000))
-          opts (assoc server :conn (:conn db-creator) :auth-cache auth-cache)
+          opts (assoc server :conn (:conn database) :auth-cache auth-cache)
           handler (app opts)]
       (assoc server :stop-fn (run-server handler opts))))
   (stop [server]

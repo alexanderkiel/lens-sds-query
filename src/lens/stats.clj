@@ -104,15 +104,15 @@
           (recur))
       (debug "Finish update looping."))))
 
-(defrecord FormSubjectCountCache [db-creator broker cache form-created-ch]
+(defrecord FormSubjectCountCache [database broker cache form-created-ch]
   Lifecycle
   (start [this]
     (let [cache (atom {})
           form-created-ch (aa/chan (:conn broker) 64 (map read-transit)
                                    {:queue-name (str "lens-sds-query.events.form.created-" (shortid/generate 5))
                                     :consumer-tag "lens-sds-query"})]
-      (initial-load cache (d/db (:conn db-creator)))
-      (update-loop (:conn db-creator) cache form-created-ch)
+      (initial-load cache (d/db (:conn database)))
+      (update-loop (:conn database) cache form-created-ch)
       ;(aa/sub (:exchange broker) "form.created" form-created-ch)
       (assoc this :cache cache :form-created-ch form-created-ch)))
   (stop [this]

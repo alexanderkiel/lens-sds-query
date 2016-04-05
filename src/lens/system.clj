@@ -3,7 +3,7 @@
   (:require [com.stuartsierra.component :as comp]
             [lens.server :refer [new-server]]
             [lens.broker :refer [new-broker]]
-            [lens.datomic :refer [new-database-creator]]
+            [lens.database :refer [new-database]]
             [lens.stats :refer [new-form-subject-count-cache]]
             [lens.util :as util]))
 
@@ -15,17 +15,17 @@
     :port (util/parse-long port)
     :thread 4
 
-    :db-creator
-    (new-database-creator db-uri)
+    :database
+    (new-database db-uri)
 
     :broker
     (new-broker {:host broker-host :username broker-username
                  :password broker-password})
 
     :form-subject-count-cache
-    (comp/using (new-form-subject-count-cache) [:db-creator :broker])
+    (comp/using (new-form-subject-count-cache) [:database :broker])
 
     :server
     (comp/using (new-server token-introspection-uri)
-                [:version :port :thread :db-creator
+                [:version :port :thread :database
                  :form-subject-count-cache])))
