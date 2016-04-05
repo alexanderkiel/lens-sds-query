@@ -5,7 +5,6 @@
             [om.next.server :as om]
             [lens.logging :refer [info debug trace]]
             [lens.query :as q :refer [Query]]
-            [lens.stats :as stats]
             [lens.util :as u :refer [NonBlankStr NonNegInt OID]]
             [schema.core :as s :refer [Any Str]])
   (:refer-clojure :exclude [read]))
@@ -64,23 +63,15 @@
         {:status 401
          :body "Unauthorized"}))))
 
-;; ---- Form Subject Counts ---------------------------------------------------
-
-(defn- check-study-oid [study-oid]
-  (when (s/check OID study-oid)
-    (throw (ex-info "Invalid or missing Study OID." {:status 400}))))
-
-(defmethod read :form-subject-counts
-  [{:keys [form-subject-count-cache]} _ {:keys [study-oid]}]
-  (check-study-oid study-oid)
-  (when-let [counts (get (stats/form-subject-counts form-subject-count-cache) study-oid)]
-    {:value counts}))
-
 ;; ---- Query -----------------------------------------------------------------
 
 (defn- check-t [t]
   (when (s/check (s/maybe NonNegInt) t)
     (throw (ex-info "Invalid T." {:status 400}))))
+
+(defn- check-study-oid [study-oid]
+  (when (s/check OID study-oid)
+    (throw (ex-info "Invalid or missing Study OID." {:status 400}))))
 
 (defn- check-query [query]
   (when-let [e (s/check Query query)]

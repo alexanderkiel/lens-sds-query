@@ -8,7 +8,6 @@ Lens SDS Query Service is a [12 Factor App][1] and uses the following environmen
 
 * `PORT` - the port to listen on
 * `JVM_OPTS` - especially useful for `-Xmx4g`
-* `BROKER_HOST` - the host name of the RabbitMQ broker
 * `DB_URI` - the Datomic database URI
 * `TOKEN_INTROSPECTION_URI` -  the OAuth2 token inspection URI to use
 * `DATOMIC_EDITION` - one of `free` or `pro` with a default of `free`
@@ -23,7 +22,7 @@ A Prismatic Schema is available in the `lens.query` namespace.
 
 ## License
 
-Copyright © 2016 FIXME
+Copyright © 2016 Alexander Kiel
 
 Distributed under the Eclipse Public License either version 1.0 or (at
 your option) any later version.
