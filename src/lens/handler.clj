@@ -7,7 +7,7 @@
             [lens.query :as q :refer [Query]]
             [lens.stats :as stats]
             [lens.util :as u :refer [NonNegInt NonBlankStr]]
-            [schema.core :as s :refer [Str]])
+            [schema.core :as s :refer [Any Str]])
   (:refer-clojure :exclude [read]))
 
 ;; ---- Health ----------------------------------------------------------------
@@ -42,10 +42,14 @@
             (update :body write-transit))))))
 
 (defmulti read
-  "Like om read. The env contains :user-info."
+  "Like om read. The env contains :conn and :user-info."
   (fn [_ k _] k))
 
-(defn query-handler [opts]
+(s/defn query-handler
+  "Handler for Om.next style queries.
+
+  Look at the read functions for the available query keys."
+  [opts :- {:conn Any Any Any}]
   (wrap-transit
     (fnk [{user-info nil} body]
       (if user-info
@@ -79,6 +83,8 @@
   (when-let [e (s/check Query query)]
     (throw (ex-info (str "Invalid or missing Query: " (pr-str e))
                     {:status 400}))))
+
+;; ---- Query -----------------------------------------------------------------
 
 (defmethod read :query
   [{:keys [conn user-info]} _ {:keys [t study-oid query]}]
