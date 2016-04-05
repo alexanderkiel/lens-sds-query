@@ -69,6 +69,9 @@
 (def NonBlankStr
   (s/constrained s/Str (complement str/blank?) 'non-blank?))
 
+(def OID
+  NonBlankStr)
+
 (def PosInt
   (s/constrained s/Int pos? 'pos?))
 

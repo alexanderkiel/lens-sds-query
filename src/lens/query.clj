@@ -330,9 +330,7 @@
     :else
     (query-atom db expression)))
 
-(s/defn counts :- {:study-event-count NonNegInt
-                   :subject-count NonNegInt}
-  [db study-oid :- Str study-events :- #{EId}]
+(s/defn counts [db study-oid study-events :- #{EId}]
   (let [[[study-event-count subject-count]]
         (d/q '[:find (count ?se) (count-distinct ?sub)
                :in $ [?se ...] ?s-oid
@@ -344,7 +342,11 @@
     {:study-event-count (or study-event-count 0)
      :subject-count (or subject-count 0)}))
 
-(s/defn query [db study-oid :- Str query :- Query]
+(def Counts
+  {:study-event-count NonNegInt
+   :subject-count NonNegInt})
+
+(s/defn query :- Counts [db study-oid :- Str query :- Query]
   (when-not (log/enabled? :trace)
     (debug {:t (t db) :study-oid study-oid :query query}))
   (let [start (System/nanoTime)

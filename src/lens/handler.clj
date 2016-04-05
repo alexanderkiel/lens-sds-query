@@ -6,7 +6,7 @@
             [lens.logging :refer [info debug trace]]
             [lens.query :as q :refer [Query]]
             [lens.stats :as stats]
-            [lens.util :as u :refer [NonNegInt NonBlankStr]]
+            [lens.util :as u :refer [NonBlankStr NonNegInt OID]]
             [schema.core :as s :refer [Any Str]])
   (:refer-clojure :exclude [read]))
 
@@ -42,8 +42,8 @@
             (update :body write-transit))))))
 
 (defmulti read
-  "Like om read. The env contains :conn and :user-info."
-  (fn [_ k _] k))
+          "Like om read. The env contains :conn and :user-info."
+          (fn [_ k _] k))
 
 (s/defn query-handler
   "Handler for Om.next style queries.
@@ -67,7 +67,7 @@
 ;; ---- Form Subject Counts ---------------------------------------------------
 
 (defn- check-study-oid [study-oid]
-  (when (s/check NonBlankStr study-oid)
+  (when (s/check OID study-oid)
     (throw (ex-info "Invalid or missing Study OID." {:status 400}))))
 
 (defmethod read :form-subject-counts
@@ -87,20 +87,31 @@
     (throw (ex-info (str "Invalid or missing Query: " (pr-str e))
                     {:status 400}))))
 
+(defn- sync-db [conn t]
+  (if-let [db (if t (deref (d/sync conn t) 100 nil) (d/db conn))]
+    db
+    (throw (ex-info (str "Unable to sync on t: " t) {:status 422}))))
+
 (defmethod read :query
+  ;; Queries for study-event count and subject count.
   [{:keys [conn user-info]} _ {:keys [t study-oid query]}]
   (check-t t)
   (check-study-oid study-oid)
   (check-query query)
   (when-not (log/enabled? :trace)
-    (debug {:username (:username user-info) :t t :study-oid study-oid
-            :query query}))
+    (debug {:query :query
+            :username (:username user-info)
+            :params
+            {:t t
+             :study-oid study-oid
+             :query query}}))
   (let [start (System/nanoTime)
-        res (if t
-              (if-let [db (deref (d/sync conn t) 100 nil)]
-                {:value (q/query (d/as-of db t) study-oid query)}
-                (throw (ex-info (str "Unable to sync on t: " t) {:status 422})))
-              {:value (q/query (d/db conn) study-oid query)})]
-    (trace {:username (:username user-info) :t t :study-oid study-oid
-            :query query :duration (u/duration start)})
+        res {:value (q/query (sync-db conn t) study-oid query)}]
+    (trace {:query :query
+            :username (:username user-info)
+            :params
+            {:t t
+             :study-oid study-oid
+             :query query}
+            :duration (u/duration start)})
     res))
