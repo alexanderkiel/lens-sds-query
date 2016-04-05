@@ -3,10 +3,11 @@
   (:require [clojure.tools.logging :as log]
             [datomic.api :as d]
             [om.next.server :as om]
-            [lens.logging :refer [info debug trace]]
-            [lens.query :as q :refer [Query]]
-            [lens.util :as u :refer [NonBlankStr NonNegInt OID]]
-            [schema.core :as s :refer [Any Str]])
+            [lens.counts :as counts]
+            [lens.logging :refer [debug trace]]
+            [lens.query :refer [Query]]
+            [lens.util :as u :refer [T OID]]
+            [schema.core :as s :refer [Any]])
   (:refer-clojure :exclude [read]))
 
 ;; ---- Health ----------------------------------------------------------------
@@ -66,7 +67,7 @@
 ;; ---- Query -----------------------------------------------------------------
 
 (defn- check-t [t]
-  (when (s/check (s/maybe NonNegInt) t)
+  (when (s/check (s/maybe T) t)
     (throw (ex-info "Invalid T." {:status 400}))))
 
 (defn- check-study-oid [study-oid]
@@ -97,7 +98,7 @@
              :study-oid study-oid
              :query query}}))
   (let [start (System/nanoTime)
-        res {:value (q/query (sync-db conn t) study-oid query)}]
+        res {:value (counts/query (sync-db conn t) study-oid query)}]
     (trace {:query :query
             :username (:username user-info)
             :params

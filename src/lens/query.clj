@@ -1,20 +1,12 @@
 (ns lens.query
-  (:require [clojure.tools.logging :as log]
+  "Run queries agains the database with run-query."
+  (:require [clojure.core.cache :as cache]
             [clojure.set :as set]
             [datomic.api :as d]
-            [lens.logging :refer [debug trace]]
-            [lens.util :refer [NonNegInt]]
-            [schema.core :as s :refer [Str Keyword Symbol Num Int Any]]
-            [clojure.core.cache :as cache]
-            [lens.util :as util]))
+            [lens.util :refer [EId T]]
+            [schema.core :as s :refer [Any Keyword]]))
 
 ;; ---- Schemas ---------------------------------------------------------------
-
-(def EId
-  (s/named NonNegInt "eid"))
-
-(def T
-  (s/named NonNegInt "t"))
 
 (defn- first-is [check]
   (let [pred (if (or (fn? check) (set? check)) check (partial = check))]
@@ -135,8 +127,8 @@
 ;; ---- Private ---------------------------------------------------------------
 
 (defmulti query-atom*
-  "Returns a seq of study-event eids which match the atom."
-  (fn [_ [type]] type))
+          "Returns a seq of study-event eids which match the atom."
+          (fn [_ [type]] type))
 
 (defmethod query-atom* :study-event
   [db [_ study-event-oid]]
@@ -165,8 +157,8 @@
    [Any]])
 
 (defmulti predicate-rules
-  "Takes a predicate like [:= 10] and returns an (item-value ?i) rule."
-  first)
+          "Takes a predicate like [:= 10] and returns an (item-value ?i) rule."
+          first)
 
 (defn- numeric-predicate-rules
   "Returns a rule which tests the items value in all numeric types."
@@ -293,7 +285,7 @@
 
 (def cache (atom (new-cache 512)))
 
-(defn- t [db]
+(defn t [db]
   (or (d/as-of-t db) (d/basis-t db)))
 
 (s/defn query-atom [db atom :- Atom]
@@ -330,30 +322,9 @@
     :else
     (query-atom db expression)))
 
-(s/defn counts [db study-oid study-events :- #{EId}]
-  (let [[[study-event-count subject-count]]
-        (d/q '[:find (count ?se) (count-distinct ?sub)
-               :in $ [?se ...] ?s-oid
-               :where
-               [?sub :subject/study-events ?se]
-               [?s :study/subjects ?sub]
-               [?s :study/oid ?s-oid]]
-             db study-events study-oid)]
-    {:study-event-count (or study-event-count 0)
-     :subject-count (or subject-count 0)}))
-
-(def Counts
-  {:study-event-count NonNegInt
-   :subject-count NonNegInt})
-
-(s/defn query :- Counts [db study-oid :- Str query :- Query]
-  (when-not (log/enabled? :trace)
-    (debug {:t (t db) :study-oid study-oid :query query}))
-  (let [start (System/nanoTime)
-        qualifier (combine db :and (rest (:qualifier query)))
-        disqualifier (combine db :or (rest (rest (:disqualifier query))))
-        res (->> (set/difference qualifier disqualifier)
-                 (counts db study-oid))]
-    (trace {:t (t db) :study-oid study-oid :query query
-            :duration (util/duration start)})
-    res))
+(s/defn run-query :- #{EId}
+  "Runs the given query against db and returns a set of study-event eids."
+  [db query :- Query]
+  (let [qualifier (combine db :and (rest (:qualifier query)))
+        disqualifier (combine db :or (rest (rest (:disqualifier query))))]
+    (set/difference qualifier disqualifier)))
