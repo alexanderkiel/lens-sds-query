@@ -42,8 +42,12 @@
             (update :body write-transit))))))
 
 (defmulti read
-          "Like om read. The env contains :conn and :user-info."
-          (fn [_ k _] k))
+  "Like om read. The env contains :conn and :user-info."
+  (fn [_ k _] k))
+
+(defmethod read :default
+  [_ key _]
+  (throw (ex-info (str "Unknown query key: " key) {:status 422})))
 
 (s/defn query-handler
   "Handler for Om.next style queries.
