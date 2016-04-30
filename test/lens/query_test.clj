@@ -1,10 +1,33 @@
 (ns lens.query-test
   (:require [clojure.test :refer :all]
-            [lens.query :refer :all]
-            [schema.experimental.generators :as g]
             [clojure.test.check.clojure-test :refer [defspec]]
             [clojure.test.check.properties :as prop]
-            [schema.core :as s]))
+            [datomic.api :as d]
+            [lens.query :refer :all]
+            [schema.core :as s]
+            [schema.experimental.generators :as g]))
+
+(defn connect [] (d/connect "datomic:mem://test"))
+
+(defn db [] (d/db (connect)))
+
+(defn- assoc-tempid [m partition]
+  (assoc m :db/id (d/tempid partition)))
+
+(defn- make-attr
+  "Assocs :db/id and :db.install/_attribute to the attr map."
+  [attr]
+  (-> (assoc-tempid attr :db.part/db)
+      (assoc :db.install/_attribute :db.part/db)))
+
+(defn database-fixture [f]
+  (d/create-database "datomic:mem://test")
+  (d/transact (connect) [(make-attr {:db/ident :item/oid
+                                     :db/valueType :db.type/string})])
+  (f)
+  (d/delete-database "datomic:mem://test"))
+
+(use-fixtures :each database-fixture)
 
 (deftest equals-predicate-rules-test
   (are [value rules] (= rules (predicate-rules [:= value]))
@@ -122,3 +145,7 @@
 (defspec query-atom-check 1000
   (prop/for-all [a (g/generator Atom)]
     (= #{} (query-atom* [] a))))
+
+(defspec query-expression-check 1000
+  (prop/for-all [a (g/generator Atom)]
+    (= #{} (query-expression (db) a))))

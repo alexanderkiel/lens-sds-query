@@ -127,8 +127,8 @@
 ;; ---- Private ---------------------------------------------------------------
 
 (defmulti query-atom*
-          "Returns a seq of study-event eids which match the atom."
-          (fn [_ [type]] type))
+  "Returns a set of study-event eids which match the atom."
+  (fn [_ [type]] type))
 
 (defmethod query-atom* :study-event
   [db [_ study-event-oid]]
@@ -288,7 +288,9 @@
 (defn t [db]
   (or (d/as-of-t db) (d/basis-t db)))
 
-(s/defn query-atom [db atom :- Atom]
+(s/defn query-atom :- #{EId}
+  "Returns a set of study-event eids which match the atom in db."
+  [db atom :- Atom]
   (let [key [(t db) atom]
         wrapper-fn #(%1 (second %2))
         value-fn #(query-atom* db %)]
@@ -310,7 +312,10 @@
   (let [op (case op :and set/intersection :or set/union)]
     (apply op (pmap #(query-expression db %) expressions))))
 
-(s/defn query-expression [db [first :as expression] :- Expression]
+(s/defn query-expression :- #{EId}
+  "Returns a set of study-event eids which match the expression in db."
+  {:arglists '([db expression])}
+  [db [first :as expression] :- Expression]
   (cond
     (= :not first)
     (negate db (second expression))
